@@ -1,22 +1,15 @@
 package main
 
 import (
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/RangelReale/osin"
 )
-
-//User is a user
-type User struct {
-	Stuff string
-}
-
-func init() {
-	gob.Register(User{})
-}
 
 //CORSMux handles cors
 type CORSMux struct {
@@ -58,14 +51,13 @@ func main() {
 	h.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		resp := server.NewResponse()
 		defer resp.Close()
+		defer osin.OutputJSON(resp, w, r)
 
 		if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
-			fmt.Printf("r.Form = %+v\n", r.Form)
-			if r.Form.Get("username") == "andrew" && r.Form.Get("password") == "pass" {
+			if valid, err := validateUser(r.Form.Get("username"), r.Form.Get("password")); err == nil && valid {
 				ar.Authorized = true
 			}
 
-			ar.UserData = User{"Hey"}
 			server.FinishAuthorizeRequest(resp, r, ar)
 		}
 
@@ -73,7 +65,6 @@ func main() {
 			fmt.Printf("resp.InternalError = %+v\n", resp.InternalError)
 		}
 
-		osin.OutputJSON(resp, w, r)
 	})
 
 	h.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +87,40 @@ func main() {
 		}
 
 		osin.OutputJSON(resp, w, r)
+	})
+
+	h.HandleFunc("/validate", func(w http.ResponseWriter, r *http.Request) {
+		t := r.URL.Query().Get("token")
+		scope := r.URL.Query().Get("scope")
+
+		if t == "" {
+			w.WriteHeader(404)
+			return
+		}
+
+		access, err := ts.LoadAccess(t)
+		if err != nil {
+			w.WriteHeader(404)
+			return
+		}
+
+		if access == nil {
+			w.WriteHeader(404)
+			return
+		}
+
+		scopes := strings.Split(scope, " ")
+		for i := range scopes {
+			if match, err := filepath.Match(scopes[i], scope); scopes[i] == "everything" || err == nil && match {
+				json.NewEncoder(w).Encode(struct {
+					Scope    string
+					UserData interface{}
+				}{access.Scope, access.UserData})
+				return
+			}
+		}
+
+		w.WriteHeader(404)
 	})
 
 	err := http.ListenAndServe(":8080", &CORSMux{h})

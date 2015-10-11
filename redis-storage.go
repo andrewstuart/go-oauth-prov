@@ -26,7 +26,7 @@ func NewRedisStore() *RedisStore {
 }
 
 func init() {
-	gob.Register(osin.DefaultClient{})
+	gob.Register(&osin.DefaultClient{})
 }
 
 //Close closes a session
@@ -48,21 +48,18 @@ func (rs *RedisStore) GetClient(id string) (osin.Client, error) {
 		Secret:      "thing",
 		RedirectUri: "http://localhost:9000/login",
 	}, nil
-	// return nil, fmt.Errorf("Client does not exist")
 }
 
 //SaveAuthorize saves authorization
 func (rs *RedisStore) SaveAuthorize(ad *osin.AuthorizeData) error {
-	fmt.Printf("save authorize ad = %+v\n", ad)
 	rs.authorize[ad.Code] = ad
-	fmt.Printf("ts.authorize = %+v\n", rs.authorize)
 
 	b := &bytes.Buffer{}
 	err := gob.NewEncoder(b).Encode(ad)
 	if err != nil {
 		return fmt.Errorf("error encoding gob: %v", err)
 	}
-	_, err = rds.Do("SET", fmt.Sprintf("oauth:authorize:%s", ad.Code), b.Bytes())
+	_, err = rds.Do("SET", "oauth:authorize:"+ad.Code, b.Bytes())
 	if err != nil {
 		log.Println("REDIS error", err)
 	}
@@ -72,19 +69,19 @@ func (rs *RedisStore) SaveAuthorize(ad *osin.AuthorizeData) error {
 
 //LoadAuthorize loads authorization data by id.
 func (rs *RedisStore) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
-	fmt.Printf("loading auth for code code = %+v\n", code)
 	if ad, ok := rs.authorize[code]; ok {
 		return ad, nil
 	}
 
-	rauth, err := rds.Do("GET", fmt.Sprintf("oauth:authorize:%s", code))
+	rauth, err := rds.Do("GET", "oauth:authorize:"+code)
 	if err != nil {
+		log.Println("Error finding code", err)
 		return nil, err
 	}
 
 	if rauth != nil {
 
-		ad := osin.AuthorizeData{Client: &osin.DefaultClient{}}
+		ad := osin.AuthorizeData{}
 		err = gob.NewDecoder(bytes.NewReader(rauth.([]byte))).Decode(&ad)
 
 		if err == nil {
@@ -101,18 +98,13 @@ func (rs *RedisStore) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
 //RemoveAuthorize removes authorization data
 func (rs *RedisStore) RemoveAuthorize(code string) error {
 	delete(rs.authorize, code)
-	_, err := rds.Do("DEL", fmt.Sprintf("oauth:authorize:%s", code))
-	if err != nil {
-		return err
-	}
+	rds.Do("DEL", "oauth:authorize:"+code)
 	return nil
 }
 
 //SaveAccess saves access data
 func (rs *RedisStore) SaveAccess(ad *osin.AccessData) error {
-	fmt.Printf("save access ad = %+v\n", ad)
 	rs.access[ad.AccessToken] = ad
-	fmt.Printf("ts.access = %+v\n", rs.access)
 
 	b := &bytes.Buffer{}
 	err := gob.NewEncoder(b).Encode(ad)
@@ -121,7 +113,7 @@ func (rs *RedisStore) SaveAccess(ad *osin.AccessData) error {
 		return err
 	}
 
-	_, err = rds.Do("SET", fmt.Sprintf("oauth:access:%s", ad.AccessToken), b.Bytes())
+	_, err = rds.Do("SET", "oauth:access:"+ad.AccessToken, b.Bytes())
 	if err != nil {
 		log.Println("error saving redis oauth:access", err)
 	}
@@ -131,17 +123,16 @@ func (rs *RedisStore) SaveAccess(ad *osin.AccessData) error {
 //LoadAccess gets access data.
 func (rs *RedisStore) LoadAccess(token string) (*osin.AccessData, error) {
 	if ad, ok := rs.access[token]; ok {
-		fmt.Printf("ad = %+v\n", ad)
 		return ad, nil
 	}
 
-	bs, err := rds.Do("GET", fmt.Sprintf("oauth:access:%s", token))
+	bs, err := rds.Do("GET", "oauth:access:"+token)
 	if err != nil {
 		log.Println("Error getting oauth access", err)
 		return nil, err
 	}
 
-	ad := &osin.AccessData{Client: &osin.DefaultClient{}}
+	ad := &osin.AccessData{}
 	err = gob.NewDecoder(bytes.NewReader(bs.([]byte))).Decode(ad)
 
 	if err != nil {
@@ -155,6 +146,7 @@ func (rs *RedisStore) LoadAccess(token string) (*osin.AccessData, error) {
 //RemoveAccess removes access data.
 func (rs *RedisStore) RemoveAccess(token string) error {
 	delete(rs.access, token)
+	rds.Do("DEL", "oauth:access:"+token)
 	return nil
 }
 
