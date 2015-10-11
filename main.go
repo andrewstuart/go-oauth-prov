@@ -94,12 +94,14 @@ func main() {
 		scope := r.URL.Query().Get("scope")
 
 		if t == "" {
-			w.WriteHeader(404)
+			w.WriteHeader(400)
+			fmt.Fprintf(w, "No token provided")
 			return
 		}
 
 		access, err := ts.LoadAccess(t)
 		if err != nil {
+			log.Println(err)
 			w.WriteHeader(404)
 			return
 		}
@@ -109,7 +111,7 @@ func main() {
 			return
 		}
 
-		scopes := strings.Split(scope, " ")
+		scopes := strings.Split(access.Scope, " ")
 		for i := range scopes {
 			if match, err := filepath.Match(scopes[i], scope); scopes[i] == "everything" || err == nil && match {
 				json.NewEncoder(w).Encode(struct {

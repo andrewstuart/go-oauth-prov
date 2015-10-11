@@ -7,7 +7,18 @@ import (
 	"log"
 
 	"github.com/RangelReale/osin"
+	"github.com/garyburd/redigo/redis"
 )
+
+var rds redis.Conn
+
+func init() {
+	var err error
+	rds, err = redis.Dial("tcp", "localhost:6379")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 //RedisStore stores oauth stuff in redis.
 type RedisStore struct {
@@ -127,7 +138,7 @@ func (rs *RedisStore) LoadAccess(token string) (*osin.AccessData, error) {
 	}
 
 	bs, err := rds.Do("GET", "oauth:access:"+token)
-	if err != nil {
+	if err != nil && bs == nil {
 		log.Println("Error getting oauth access", err)
 		return nil, err
 	}
