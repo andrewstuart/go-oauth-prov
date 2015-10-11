@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,10 @@ type User struct {
 	Stuff string
 }
 
+func init() {
+	gob.Register(User{})
+}
+
 //CORSMux handles cors
 type CORSMux struct {
 	sm http.Handler
@@ -21,6 +26,14 @@ type CORSMux struct {
 //ServeHTTP serves http
 func (cm *CORSMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+	w.Header().Set("Access-Control-Allow-Methods", "GET,POST")
+
+	if r.Method == "OPTIONS" {
+		w.Write(nil)
+		return
+	}
+	cm.sm.ServeHTTP(w, r)
 }
 
 func main() {
@@ -37,7 +50,7 @@ func main() {
 		osin.PASSWORD,
 	}
 
-	ts := NewTestStorage()
+	ts := NewRedisStore()
 	server := osin.NewServer(sc, ts)
 
 	h := http.NewServeMux()
@@ -47,7 +60,8 @@ func main() {
 		defer resp.Close()
 
 		if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
-			if r.URL.Query().Get("user") == "andrew" && r.URL.Query().Get("password") == "pass" {
+			fmt.Printf("r.Form = %+v\n", r.Form)
+			if r.Form.Get("username") == "andrew" && r.Form.Get("password") == "pass" {
 				ar.Authorized = true
 			}
 
@@ -58,8 +72,6 @@ func main() {
 		if resp.IsError && resp.InternalError != nil {
 			fmt.Printf("resp.InternalError = %+v\n", resp.InternalError)
 		}
-
-		resp.Output["foo"] = "bar"
 
 		osin.OutputJSON(resp, w, r)
 	})
@@ -76,6 +88,10 @@ func main() {
 		}
 
 		if resp.IsError {
+			resp.StatusCode = 401
+			// resp.Output["reason"] = "Client has not authenticated itself."
+			fmt.Printf("resp.ErrorId = %+v\n", resp.ErrorId)
+
 			fmt.Printf("resp.InternalError = %+v\n", resp.InternalError)
 		}
 
