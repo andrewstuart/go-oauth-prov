@@ -51,6 +51,11 @@ func (rs *RedisStore) Clone() osin.Storage {
 
 //GetClient gets a client by id
 func (rs *RedisStore) GetClient(id string) (osin.Client, error) {
+	// vals, err := redis.Values(rds.Do("HGETALL", "oauth:client:"+id))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	if cli, ok := rs.clients[id]; ok {
 		return cli, nil
 	}
@@ -133,12 +138,8 @@ func (rs *RedisStore) SaveAccess(ad *osin.AccessData) error {
 
 //LoadAccess gets access data.
 func (rs *RedisStore) LoadAccess(token string) (*osin.AccessData, error) {
-	if ad, ok := rs.access[token]; ok {
-		return ad, nil
-	}
-
 	bs, err := rds.Do("GET", "oauth:access:"+token)
-	if err != nil && bs == nil {
+	if err != nil || bs == nil {
 		log.Println("Error getting oauth access", err)
 		return nil, err
 	}
@@ -151,7 +152,9 @@ func (rs *RedisStore) LoadAccess(token string) (*osin.AccessData, error) {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("Could not find data for token %s", token)
+	fmt.Printf("ad = %+v\n", ad)
+
+	return ad, nil
 }
 
 //RemoveAccess removes access data.
