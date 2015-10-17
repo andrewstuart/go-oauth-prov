@@ -78,6 +78,8 @@ func handleAuthorize(w http.ResponseWriter, r *http.Request) {
 	defer resp.Close()
 	defer osin.OutputJSON(resp, w, r)
 
+	log.Println(r)
+
 	if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
 		defer server.FinishAuthorizeRequest(resp, r, ar)
 

@@ -26,10 +26,24 @@ func (cm *CORSMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	h := http.NewServeMux()
 	h.HandleFunc("/authorize", handleAuthorize)
+	// h.HandleFunc("/uPortal/saml/SSO", handleSAML)
 	h.HandleFunc("/token", handleToken)
 	h.HandleFunc("/validate", handleValidate)
 
-	err := http.ListenAndServe(":8080", &CORSMux{h})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r)
+		w.Write([]byte(`<html><head><title>HEY</title></head><body><h1>HEY</h1></html>`))
+		return
+	})
+
+	go func() {
+		err := http.ListenAndServe(":8080", &CORSMux{h})
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	err := http.ListenAndServeTLS(":8081", "../cert", "../key", &CORSMux{h})
 	if err != nil {
 		log.Fatal(err)
 	}
