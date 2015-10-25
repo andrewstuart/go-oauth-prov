@@ -41,6 +41,7 @@ func handleToken(w http.ResponseWriter, r *http.Request) {
 		if u, p, ok := r.BasicAuth(); ok && u == ar.Client.GetId() && p == ar.Client.GetSecret() {
 			ar.Authorized = true
 		}
+
 		server.FinishAccessRequest(resp, r, ar)
 	}
 
