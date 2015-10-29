@@ -147,6 +147,7 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(404)
 }
 
+//Returns userdata in json format
 func handleTokenInfo(w http.ResponseWriter, r *http.Request) {
 	t := r.URL.Query().Get("token")
 
@@ -165,6 +166,7 @@ func handleTokenInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Basic auth form
 func writeAuthForm(w http.ResponseWriter, r *http.Request) {
 	t, err := template.New("auth").Parse(`
 	<html>
