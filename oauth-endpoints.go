@@ -27,6 +27,7 @@ func init() {
 		osin.REFRESH_TOKEN,
 		osin.ASSERTION,
 		osin.PASSWORD,
+		osin.AccessRequestType("saml2-grant"),
 	}
 
 	ts = NewRedisStore()
