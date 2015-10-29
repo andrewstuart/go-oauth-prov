@@ -70,9 +70,12 @@ func (rs *RedisStore) GetClient(id string) (osin.Client, error) {
 func (rs *RedisStore) SaveAuthorize(ad *osin.AuthorizeData) error {
 	rs.authorize[ad.Code] = ad
 
+	fmt.Printf("ad.UserData = %#v\n", ad.UserData)
+
 	b := &bytes.Buffer{}
 	err := gob.NewEncoder(b).Encode(ad)
 	if err != nil {
+		log.Println(err)
 		return fmt.Errorf("error encoding gob: %v", err)
 	}
 	_, err = rds.Do("SET", "oauth:authorize:"+ad.Code, b.Bytes())

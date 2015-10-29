@@ -22,7 +22,8 @@ func init() {
 		log.Fatal(err)
 	}
 
-	gob.Register(&saml.Assertion{})
+	gob.Register(saml.Assertion{})
+	gob.Register(&saml.AudienceRestriction{})
 }
 
 func handleSAML(w http.ResponseWriter, r *http.Request) {
@@ -68,14 +69,10 @@ func handleSAML(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			log.Println(err)
-			w.WriteHeader(500)
 			return
 		}
 
-		ar.UserData = a.Attributes
+		ar.UserData = a
 		ar.Authorized = true
-
-		//Write json and xml for testing
-		// io.Copy(w, bytes.NewBuffer(pt))
 	}
 }

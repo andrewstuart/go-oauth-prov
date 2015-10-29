@@ -147,6 +147,24 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(404)
 }
 
+func handleTokenInfo(w http.ResponseWriter, r *http.Request) {
+	t := r.URL.Query().Get("token")
+
+	access, err := ts.LoadAccess(t)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if access.UserData != nil {
+		err := json.NewEncoder(w).Encode(access.UserData)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
 func writeAuthForm(w http.ResponseWriter, r *http.Request) {
 	t, err := template.New("auth").Parse(`
 	<html>

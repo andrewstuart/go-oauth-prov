@@ -30,6 +30,7 @@ func main() {
 	h.HandleFunc("/token", handleToken)
 	h.HandleFunc("/saml", handleSAML)
 	h.HandleFunc("/validate", handleValidate)
+	h.HandleFunc("/token_info", handleTokenInfo)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r)
