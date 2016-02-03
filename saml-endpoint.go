@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/RangelReale/osin"
 	"github.com/andrewstuart/gosaml2"
@@ -17,9 +18,12 @@ var cert tls.Certificate
 
 func init() {
 	var err error
-	cert, err = tls.LoadX509KeyPair("../openid-sp-enc.crt", "../openid-sp-enc.key")
+
+	name := os.Getenv("CERT_NAME")
+
+	cert, err = tls.LoadX509KeyPair("/certs/"+name+".crt", "/certs/"+name+".key")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error loading tls certs", err)
 	}
 
 	gob.Register(saml.Assertion{})

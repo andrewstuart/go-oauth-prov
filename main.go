@@ -54,8 +54,8 @@ func main() {
 	// 	}
 	// }()
 
-	err := http.ListenAndServeTLS("127.0.0.4:8443", "../*.astuart.co.crt", "../*.astuart.co.key", m)
+	err := http.ListenAndServeTLS("127.0.0.4:8443", "./creds/*.astuart.co.crt", "./creds/*.astuart.co.key", m)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error serving tls", err)
 	}
 }

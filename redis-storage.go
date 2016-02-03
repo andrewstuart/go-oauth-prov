@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/RangelReale/osin"
 	"github.com/garyburd/redigo/redis"
@@ -14,7 +15,14 @@ var rds redis.Conn
 
 func init() {
 	var err error
-	rds, err = redis.Dial("tcp", "localhost:6379")
+
+	rHost := os.Getenv("REDIS_HOST")
+
+	if rHost == "" {
+		rHost = "localhost"
+	}
+
+	rds, err = redis.Dial("tcp", fmt.Sprintf("%s:6379", rHost))
 	if err != nil {
 		log.Fatal(err)
 	}

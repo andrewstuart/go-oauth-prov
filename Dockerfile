@@ -1,5 +1,8 @@
-from alpine
+FROM golang
 
-add oauth_prov /
+RUN mkdir /creds
+VOLUME /creds
 
-entrypoint /oauth_prov
+ADD ./go-oauth-prov /go-oauth-prov
+
+ENTRYPOINT /go-oauth-prov
