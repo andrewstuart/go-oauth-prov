@@ -19,9 +19,9 @@ var cert tls.Certificate
 func init() {
 	var err error
 
-	name := os.Getenv("CERT_NAME")
+	name := os.Getenv("ENC_CERT_NAME")
 
-	cert, err = tls.LoadX509KeyPair("/certs/"+name+".crt", "/certs/"+name+".key")
+	cert, err = tls.LoadX509KeyPair(crt(name), key(name))
 	if err != nil {
 		log.Fatal("Error loading tls certs", err)
 	}
@@ -64,7 +64,7 @@ func handleSAML(w http.ResponseWriter, r *http.Request) {
 
 		pt, err := res.Decrypt(cert)
 		if err != nil {
-			log.Println(err)
+			log.Println("error decrypting saml:", err)
 			return
 		}
 

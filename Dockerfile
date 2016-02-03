@@ -3,6 +3,6 @@ FROM golang
 RUN mkdir /creds
 VOLUME /creds
 
-ADD ./go-oauth-prov /go-oauth-prov
+CMD /go-oauth-prov
 
-ENTRYPOINT /go-oauth-prov
+ADD ./go-oauth-prov /go-oauth-prov

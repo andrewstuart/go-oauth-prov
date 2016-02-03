@@ -1,9 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
+
+var certDir string
+
+func init() {
+	certDir = os.Getenv("CERT_DIR")
+	if certDir == "" {
+		certDir = "/certs"
+	}
+}
 
 //CORSMux handles cors
 type CORSMux struct {
@@ -41,21 +52,24 @@ func main() {
 	m := &CORSMux{h}
 
 	go func() {
-		err := http.ListenAndServe("127.0.0.4:8080", m)
+		err := http.ListenAndServe(":8080", m)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	// go func() {
-	// 	err := http.ListenAndServeTLS("127.0.0.4:8443", "../*.us-west-2.elb.amazonaws.com.crt", "../*.us-west-2.elb.amazonaws.com.key", m)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }()
+	name := os.Getenv("HTTP_CERT_NAME")
 
-	err := http.ListenAndServeTLS("127.0.0.4:8443", "./creds/*.astuart.co.crt", "./creds/*.astuart.co.key", m)
+	err := http.ListenAndServeTLS(":8443", crt(name), key(name), m)
 	if err != nil {
 		log.Fatal("Error serving tls", err)
 	}
+}
+
+func key(s string) string {
+	return fmt.Sprintf("%s/%s.key", certDir, s)
+}
+
+func crt(s string) string {
+	return fmt.Sprintf("%s/%s.crt", certDir, s)
 }
