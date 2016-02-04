@@ -1,8 +1,4 @@
-FROM golang
+FROM golang:onbuild
 
 RUN mkdir /creds
 VOLUME /creds
-
-CMD /go-oauth-prov
-
-ADD ./go-oauth-prov /go-oauth-prov
